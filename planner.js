@@ -1,3 +1,5 @@
+'use strict';
+
 var GitHubApi = require("github");
 
 var filterOutput = function(input) {
@@ -35,6 +37,7 @@ var postToGithub = function(config, plan) {
     sha: config.sha,
     body: plan,
   };
+  console.log(metaData);
   github.repos.createCommitComment(metaData, function(err, res) {
     if (err) {
       throw err;
@@ -45,16 +48,22 @@ var postToGithub = function(config, plan) {
 }
 
 module.exports = {
-  plan: function (config) {
-    const execFile = require('child_process').execFile;
-    const child = execFile(config.terraform.executable, config.terraform.arguments, (error, stdout, stderr) => {
+  plan: function (config, done) {
+    var childProcess = require('child_process');
+    console.log('Generating the Terraform Plan..');
+    var output = childProcess.execFile(config.terraform.executable, config.terraform.arguments, config.terraform.options, (error, stdout, stderr) => {
       if (error) {
-        throw error;
+        console.log(error);
+        console.log(stderr);
+        return;
       }
 
-      console.log('Plan is:\n\n' + stdout);
+
       var filteredOutput = filterOutput(stdout);
-      postToGithub(config.github, filteredOutput);
+      var outputToPost = 'Generated Plan:\n```\n' + filteredOutput + '\n```';
+      console.log('Plan is:\n\n' + outputToPost);
+      postToGithub(config.github, outputToPost);
+      done();
     });
   }
 }
