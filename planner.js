@@ -13,7 +13,7 @@ var filterOutput = function(input, blacklist) {
               .replace('will be created (or destroyed and then created if an existing resource\n', '')
               .replace('exists), yellow resources are being changed in-place, and red resources\n', '')
               .replace('will be destroyed. Cyan entries are data sources to be read.\n', '')
-              .replace(/\n\n/, '');
+              .replace(/\n\n\n/, '');
 
   for (var i = 0; i < blacklist.length; i++) {
     var word = blacklist[i];
