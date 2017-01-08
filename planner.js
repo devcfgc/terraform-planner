@@ -15,7 +15,18 @@ var filterOutput = function(input, blacklist) {
               .replace('will be destroyed. Cyan entries are data sources to be read.\n', '')
               .replace(/\n\n\n/, '');
 
-  // TODO: remove any lines containing "Refreshing state..."
+  var lines = result.split('\n');
+  var output = [];
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if (line.indexOf('Refreshing state...') !== -1) {
+      continue;
+    }
+
+    output.push(line);
+  }
+  result = output.join('\n');
+
   for (var i = 0; i < blacklist.length; i++) {
     var word = blacklist[i];
     var replacement = '';
