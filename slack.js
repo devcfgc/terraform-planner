@@ -1,6 +1,7 @@
 'use strict';
-var Slack = require('slack-node');
+
 var planner = require('./planner');
+var Slack = require('slack-node');
 
 function checkTime(i) {
   return (i < 10) ? "0" + i : i;
@@ -14,36 +15,33 @@ function buildFormattedTime() {
   return time;
 }
 
+function postToSlack(channel, config, body) {
+  var slack = new Slack();
+  slack.setWebhook(config.slack.webhookUri);
+  slack.webhook({
+    channel: channel,
+    username: config.slack.username,
+    icon_emoji: config.slack.icon,
+    link_names: 1,
+    text: body,
+  }, function(err, response) {
+    console.log(response);
+  });
+}
+
 module.exports = {
   plan: function (config, done) {
     planner.plan(config, function (plan) {
-      var slack = new Slack();
-      slack.setWebhook(config.slack.webhookUri);
 
       if (config.slack.sendTerraformNotification) {
-        slack.webhook({
-          channel: config.slack.terraformRoom,
-          username: config.slack.username,
-          icon_emoji: config.slack.icon,
-          text: 'Deploying to ' + config.environment + ' now - details in #deployments',
-        }, function(err, response) {
-          console.log(response);
-        });
+        var message = 'Deploying to ' + config.environment + ' now - details in #deployments';
+        postToSlack(config.slack.terraformRoom, config, message);
       }
 
       if (config.slack.sendDeploymentNotification) {
         var time = buildFormattedTime();
-        var outputToPost = 'NEW TERRAFORM DEPLOYMENT PLANNED FOR (' + time + ')*.\n Terraform Plan of Changes:\n```\n' + plan + '\n```';
-        slack.webhook({
-          channel: config.slack.deploymentsRoom,
-          username: config.slack.username,
-          icon_emoji: config.slack.icon,
-          mrkdwn: true,
-          link_names: 1,
-          text: outputToPost
-        }, function(err, response) {
-          console.log(response);
-        });
+        var message = 'NEW TERRAFORM DEPLOYMENT PLANNED FOR ' + time + ' (UTC)*.\n Terraform Plan of Changes:\n```\n' + plan + '\n```';
+        postToSlack(config.slack.deploymentsRoom, config, message);
       }
 
       done();
