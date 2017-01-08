@@ -15,15 +15,34 @@ function buildFormattedTime() {
   return time;
 }
 
-function postToSlack(channel, config, body) {
+function postToSlack(channel, config, title, attachment) {
   var slack = new Slack();
   slack.setWebhook(config.slack.webhookUri);
+
+  var attachments = [
+    {
+      fallback: title,
+      pretext: title,
+      fields: [
+        {
+          title: "Environment",
+          value: config.environment.toUpperCase(),
+          short: true
+        }
+      ]
+    }
+  ];
+
+  if (attachment != null) {
+    attachments[0].fields.push(attachment);
+  }
+
   slack.webhook({
     channel: channel,
     username: config.slack.username,
     icon_emoji: config.slack.icon,
     link_names: 1,
-    text: body,
+    attachments: attachments
   }, function(err, response) {
     console.log(response);
   });
@@ -34,14 +53,23 @@ module.exports = {
     planner.plan(config, function (plan) {
 
       if (config.slack.sendTerraformNotification) {
-        var message = 'Deploying to ' + config.environment + ' now - details in #deployments';
-        postToSlack(config.slack.terraformRoom, config, message);
+        var title = 'Terraform Deployment Started..'
+        var attachment = {
+            title: "Plan available in",
+            value: config.slack.deploymentsRoom,
+            short: false
+        };
+        postToSlack(config.slack.terraformRoom, config, title, attachment);
       }
-
       if (config.slack.sendDeploymentNotification) {
         var time = buildFormattedTime();
-        var message = 'NEW TERRAFORM DEPLOYMENT PLANNED FOR ' + time + ' (UTC)*.\n Terraform Plan of Changes:\n```\n' + plan + '\n```';
-        postToSlack(config.slack.deploymentsRoom, config, message);
+        var title = 'NEW TERRAFORM DEPLOYMENT PLANNED FOR ' + time + ' (UTC)'
+        var attachment = {
+            title: "Terraform Plan of Changes:",
+            value: plan,
+            short: false
+        };
+        postToSlack(config.slack.deploymentsRoom, config, title, attachment);
       }
 
       done();
