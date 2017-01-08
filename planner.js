@@ -15,6 +15,7 @@ var filterOutput = function(input, blacklist) {
               .replace('will be destroyed. Cyan entries are data sources to be read.\n', '')
               .replace(/\n\n\n/, '');
 
+  // TODO: remove any lines containing "Refreshing state..."
   for (var i = 0; i < blacklist.length; i++) {
     var word = blacklist[i];
     var replacement = '';
@@ -28,36 +29,6 @@ var filterOutput = function(input, blacklist) {
   return result;
 };
 
-var postToGithub = function(config, plan) {
-  var github = new GitHubApi({
-    protocol: "https",
-    host: "api.github.com",
-    headers: {
-        "user-agent": "Terraform-Planner"
-    },
-    Promise: require('bluebird'),
-    followRedirects: false,
-    timeout: 5000
-  });
-  github.authenticate({
-    type: "token",
-    token: config.userToken,
-  });
-  var metaData = {
-    owner: config.owner,
-    repo: config.repo,
-    sha: config.sha,
-    body: plan,
-  };
-  github.repos.createCommitComment(metaData, function(err, res) {
-    if (err) {
-      throw err;
-    }
-
-    console.log('Posted to Github!');
-  });
-}
-
 module.exports = {
   plan: function (config, done) {
     var childProcess = require('child_process');
@@ -70,10 +41,7 @@ module.exports = {
       }
 
       var filteredOutput = filterOutput(stdout, config.blacklist);
-      var outputToPost = 'Generated Plan:\n```\n' + filteredOutput + '\n```';
-      console.log('Plan is:\n\n' + outputToPost);
-      postToGithub(config.github, outputToPost);
-      done();
+      done(filteredOutput);
     });
   }
 }
