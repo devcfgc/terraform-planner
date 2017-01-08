@@ -20,22 +20,26 @@ module.exports = {
       var slack = new Slack();
       slack.setWebhook(config.slack.webhookUri);
 
-      slack.webhook({
-        channel: config.slack.terraformRoom,
-        username: config.slack.username,
-        icon_emoji: config.slack.icon,
-        text: 'Deploying to ' + config.environment + ' now - details in #deployments',
-      }, function(err, response) {
-        console.log(response);
-      });
+      if (config.slack.sendTerraformNotification) {
+        slack.webhook({
+          channel: config.slack.terraformRoom,
+          username: config.slack.username,
+          icon_emoji: config.slack.icon,
+          text: 'Deploying to ' + config.environment + ' now - details in #deployments',
+        }, function(err, response) {
+          console.log(response);
+        });
+      }
 
       if (config.slack.sendDeploymentNotification) {
         var time = buildFormattedTime();
-        var outputToPost = '*NEW TERRAFORM DEPLOYMENT PLANNED FOR (' + time + ')*.\n Terraform Plan of Changes:\n```\n' + plan + '\n```';
+        var outputToPost = 'NEW TERRAFORM DEPLOYMENT PLANNED FOR (' + time + ')*.\n Terraform Plan of Changes:\n```\n' + plan + '\n```';
         slack.webhook({
           channel: config.slack.deploymentsRoom,
           username: config.slack.username,
           icon_emoji: config.slack.icon,
+          mrkdwn: true,
+          link_names: 1,
           text: outputToPost
         }, function(err, response) {
           console.log(response);
