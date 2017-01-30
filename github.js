@@ -36,7 +36,7 @@ var postToGithub = function(config, plan) {
 module.exports = {
   plan: function (config, done) {
     planner.plan(config, function (plan) {
-      var outputToPost = 'Generated Plan for **' + config.environment + ' Environment**:\n```\n' + plan + '\n```';
+      var outputToPost = 'Generated Plan for **' + config.environment.toUpperCase() + ' Environment**:\n```\n' + plan + '\n```';
       console.log('Plan is:\n\n' + outputToPost);
       postToGithub(config.github, outputToPost);
       done();
